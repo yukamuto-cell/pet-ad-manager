@@ -563,14 +563,16 @@ function getAlerts(p) {
     if (dl === null) return;
 
     // ステータスチェック：全員完了済みならアラートを出さない
-    if (s.check_key && infs.length > 0) {
-      // need_statuses がある場合：そのステータスの人が1人もいなければアラート不要
+    if (s.check_key) {
+      if (infs.length === 0) return; // インフルエンサーがいない場合はアラート不要
       if (s.need_statuses) {
         const hasNeeded = infs.some(inf => s.need_statuses.includes(inf.status[s.check_key]));
         if (!hasNeeded) return;
       } else if (s.done_statuses) {
-        // 全員が完了ステータスならアラート不要
-        const allDone = infs.every(inf => s.done_statuses.includes(inf.status[s.check_key]));
+        const allDone = infs.every(inf => {
+          const val = inf.status[s.check_key];
+          return s.done_statuses.includes(val);
+        });
         if (allDone) return;
       }
     }
