@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PET広告 案件管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F4F2ED;
+  --surface: #FFFFFF;
+  --surface2: #F0EDE6;
+  --border: #E2DDD4;
+  --border2: #C8C2B8;
+  --text: #1A1816;
+  --text2: #6B6560;
+  --text3: #9E9890;
+  --accent: #2C5F2E;
+  --accent-bg: #EAF2EA;
+  --amber: #A85C00;
+  --amber-bg: #FDF0E0;
+  --red: #B83232;
+  --red-bg: #FDECEA;
+  --blue: #1A4F82;
+  --blue-bg: #E8EFF8;
+  --purple: #5B2C8D;
+  --purple-bg: #F3EEF9;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* NAV */
+.topnav { background: var(--text); color: #fff; padding: 0 28px; display: flex; align-items: center; height: 52px; gap: 16px; position: sticky; top: 0; z-index: 50; }
+.nav-logo { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; letter-spacing: 0.05em; color: rgba(255,255,255,0.9); }
+.nav-back { background: rgba(255,255,255,0.12); border: none; color: #fff; padding: 5px 12px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; display: none; align-items: center; gap: 4px; }
+.nav-back:hover { background: rgba(255,255,255,0.2); }
+.nav-title { font-size: 13px; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+.nav-right { margin-left: auto; display: flex; gap: 8px; }
+.nav-btn { background: rgba(255,255,255,0.12); border: none; color: #fff; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; }
+.nav-btn:hover { background: rgba(255,255,255,0.2); }
+.nav-btn.primary { background: rgba(255,255,255,0.9); color: var(--text); font-weight: 500; }
+.nav-btn.primary:hover { background: #fff; }
+
+/* HOME */
+.home-wrap { max-width: 700px; margin: 0 auto; padding: 28px 24px; }
+.home-header { margin-bottom: 22px; }
+.home-header h1 { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+.home-header p { font-size: 12px; color: var(--text3); }
+
+.type-section { margin-bottom: 26px; }
+.type-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.type-heading-bar { width: 4px; height: 16px; border-radius: 2px; }
+.bar-pr { background: var(--accent); }
+.bar-shoot { background: var(--amber); }
+.bar-video { background: var(--blue); }
+.type-heading-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--text2); text-transform: uppercase; font-family: 'DM Mono', monospace; }
+.type-heading-count { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+.project-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 5px; display: flex; align-items: center; padding: 13px 16px; cursor: pointer; transition: all .13s; gap: 10px; }
+.project-row:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.project-row-name { flex: 1; font-size: 14px; font-weight: 500; }
+.pr-alert { font-size: 11px; font-weight: 500; white-space: nowrap; }
+.pr-alert.red { color: var(--red); }
+.pr-alert.amber { color: var(--amber); }
+.arrow-icon { color: var(--text3); font-size: 16px; }
+
+/* DETAIL */
+.detail-wrap { max-width: 960px; margin: 0 auto; padding: 24px 24px; }
+.detail-cols { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+
+/* Alert banners */
+.alert-banner { background: var(--red-bg); border: 1px solid rgba(184,50,50,0.2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px; }
+.alert-banner.amber { background: var(--amber-bg); border-color: rgba(168,92,0,0.2); }
+.alert-banner-text { font-size: 12px; color: var(--red); line-height: 1.5; }
+.alert-banner.amber .alert-banner-text { color: var(--amber); }
+.alert-banner-text strong { font-weight: 700; }
+
+/* Progress summary */
+.progress-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.progress-summary-title { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.progress-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.progress-bar-bg { flex: 1; height: 7px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width .3s; }
+.progress-numbers { font-size: 13px; font-weight: 700; font-family: 'DM Mono', monospace; min-width: 44px; text-align: right; }
+.progress-unsub-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; margin-top: 8px; }
+.unsub-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.unsub-chip { background: var(--red-bg); color: var(--red); border: 1px solid rgba(184,50,50,0.15); border-radius: 4px; padding: 3px 9px; font-size: 11px; cursor: pointer; font-family: 'DM Mono', monospace; transition: background .1s; }
+.unsub-chip:hover { background: #f8d8d8; }
+
+/* Inf list */
+.inf-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.inf-list-header h2 { font-size: 14px; font-weight: 700; }
+
+.inf-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; transition: border-color .2s; }
+.inf-card.highlight { border-color: var(--red); }
+.inf-card-header { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; cursor: pointer; transition: background .1s; }
+.inf-card-header:hover { background: var(--bg); }
+.inf-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.inf-main { flex: 1; min-width: 0; }
+.inf-top-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; }
+.inf-name { font-size: 13px; font-weight: 700; }
+.inf-account { font-size: 11px; color: var(--blue); font-family: 'DM Mono', monospace; }
+.inf-sub { font-size: 11px; color: var(--text3); }
+.inf-status-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.expand-icon { color: var(--text3); font-size: 11px; transition: transform .15s; flex-shrink: 0; margin-top: 4px; }
+.expand-icon.open { transform: rotate(180deg); }
+
+.inf-card-body { display: none; padding: 12px 14px 14px; border-top: 1px solid var(--border); }
+.inf-card-body.open { display: block; }
+.inf-detail-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.inf-meta-item { font-size: 11px; }
+.inf-meta-item a { color: var(--blue); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 11px; }
+.inf-meta-item a:hover { text-decoration: underline; }
+.pet-tag { font-size: 11px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; }
+
+/* Offer badge */
+.offer-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.offer-yes { background: var(--accent-bg); color: var(--accent); }
+.offer-no { background: var(--red-bg); color: var(--red); }
+.offer-pending { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+
+/* Status flow */
+.flow-section { margin-bottom: 14px; }
+.flow-section-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+.flow-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+.flow-row:last-child { border-bottom: none; }
+.flow-label { font-size: 12px; color: var(--text2); flex-shrink: 0; }
+.flow-val { display: flex; align-items: center; gap: 6px; }
+.status-select { padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; cursor: pointer; }
+.status-select:focus { outline: none; border-color: var(--border2); }
+.text-input-sm { padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; width: 180px; }
+.text-input-sm:focus { outline: none; border-color: var(--border2); }
+.date-input-sm { padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; background: var(--surface); color: var(--text); font-family: 'DM Mono', monospace; }
+.date-input-sm:focus { outline: none; border-color: var(--border2); }
+.save-btn-sm { font-size: 11px; background: var(--accent); color: #fff; border: none; border-radius: 4px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; }
+.save-btn-sm:hover { background: #1e4a20; }
+
+/* Pill */
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 500; white-space: nowrap; }
+.pill-done { background: var(--accent-bg); color: var(--accent); }
+.pill-progress { background: var(--blue-bg); color: var(--blue); }
+.pill-amber { background: var(--amber-bg); color: var(--amber); }
+.pill-wait { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+.pill-red { background: var(--red-bg); color: var(--red); }
+.pill-purple { background: var(--purple-bg); color: var(--purple); }
+
+/* Schedule panel */
+.schedule-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; position: sticky; top: 68px; }
+.schedule-panel-header { padding: 13px 16px 10px; border-bottom: 1px solid var(--border); }
+.schedule-panel-header h3 { font-size: 13px; font-weight: 700; }
+.schedule-panel-header p { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.schedule-list { padding: 8px 14px 12px; }
+.schedule-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.schedule-item:last-child { border-bottom: none; }
+.schedule-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.dot-done { background: var(--accent); }
+.dot-alert { background: var(--red); animation: blink 1s infinite; }
+.dot-near { background: var(--amber); }
+.dot-future { background: var(--border2); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.schedule-content { flex: 1; }
+.schedule-milestone { font-size: 12px; font-weight: 500; }
+.schedule-sub { font-size: 11px; color: var(--text3); margin-top: 1px; font-family: 'DM Mono', monospace; }
+.schedule-remain { font-size: 11px; margin-top: 1px; }
+.schedule-date-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+.schedule-date-input { font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; background: var(--surface); color: var(--text); font-family: 'DM Mono', monospace; }
+.schedule-date-input:focus { outline: none; border-color: var(--border2); }
+.schedule-text-input { font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; width: 160px; }
+.schedule-text-input:focus { outline: none; border-color: var(--border2); }
+.schedule-save { font-size: 10px; background: var(--text); color: #fff; border: none; border-radius: 3px; padding: 3px 7px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+.modal-head { padding: 16px 20px 13px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); }
+.modal-head h2 { font-size: 14px; font-weight: 700; }
+.modal-close { background: none; border: 1px solid var(--border); border-radius: 5px; width: 26px; height: 26px; cursor: pointer; font-size: 14px; color: var(--text2); }
+.modal-body { padding: 16px 20px; }
+.modal-foot { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+.form-row { margin-bottom: 11px; }
+.form-label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; }
+.form-input, .form-select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--text); font-family: 'Noto Sans JP', sans-serif; }
+.form-input:focus, .form-select:focus { outline: none; border-color: var(--border2); }
+.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-section-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+.btn { padding: 7px 16px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text2); font-family: 'Noto Sans JP', sans-serif; }
+.btn:hover { border-color: var(--border2); color: var(--text); }
+.btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+.btn-primary:hover { background: #333; }
+.platform-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.platform-label { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; background: var(--surface); }
+.empty { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+
+/* Home tabs */
+.home-tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text3); font-family: 'Noto Sans JP', sans-serif; margin-bottom: -1px; transition: color .13s; }
+.home-tab:hover { color: var(--text2); }
+.home-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+/* Archive row */
+.archive-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 5px; display: flex; align-items: center; padding: 12px 16px; cursor: pointer; gap: 10px; transition: all .13s; opacity: 0.75; }
+.archive-row:hover { border-color: var(--border2); opacity: 1; }
+.archive-row-name { flex: 1; font-size: 14px; color: var(--text2); }
+.archive-badge { font-size: 11px; background: var(--accent-bg); color: var(--accent); border-radius: 8px; padding: 2px 9px; font-weight: 500; }
+.archive-date { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+</style>
+</head>
+<body>
+
+<nav class="topnav" id="topnav">
+  <span class="nav-logo">🐾 PET AD</span>
+  <button class="nav-back" id="nav-back" onclick="goHome()">← 案件一覧</button>
+  <span class="nav-title" id="nav-title"></span>
+  <div class="nav-right">
+    <button class="nav-btn" id="sync-status-btn" onclick="openGasModal()" title="スプレッドシート連携設定">⚙ 連携設定</button>
+    <button class="nav-btn" id="sync-btn" onclick="syncNow()" style="display:none">🔄 同期</button>
+    <button class="nav-btn primary" onclick="openAddProjectModal()">＋ 案件追加</button>
+  </div>
+</nav>
+
+<!-- GAS URL Modal -->
+<div class="modal-overlay" id="modal-gas">
+  <div class="modal">
+    <div class="modal-head"><h2>⚙ スプレッドシート連携設定</h2><button class="modal-close" onclick="closeModal('modal-gas')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--blue-bg);border:1px solid rgba(26,79,130,0.15);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);line-height:1.8;">
+        <strong>設定手順</strong><br>
+        1. 下のリンクからApps Scriptを開く<br>
+        2. コードをエディタに貼り付けて保存<br>
+        3. 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」<br>
+        4. アクセスできるユーザー：<strong>全員</strong> に設定<br>
+        5. 発行されたURLを下に貼り付ける
+      </div>
+      <div class="form-row">
+        <label class="form-label">Google Apps Script ウェブアプリURL</label>
+        <input class="form-input" id="gas-url-input" type="text" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+      </div>
+      <div id="gas-test-result" style="font-size:12px;margin-top:8px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-gas')">キャンセル</button>
+      <button class="btn" onclick="testGasConnection()" style="color:var(--blue);border-color:var(--blue);">接続テスト</button>
+      <button class="btn btn-primary" onclick="saveGasUrl()">保存して連携開始</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="home-wrap">
+    <div class="home-header">
+      <h1>案件一覧</h1>
+      <p>案件を選ぶとインフルエンサーごとのステータスとスケジュールを確認できます</p>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;">
+      <button class="home-tab active" id="tab-active" onclick="switchHomeTab('active')">進行中</button>
+      <button class="home-tab" id="tab-archive" onclick="switchHomeTab('archive')">完了済み <span id="archive-count" style="font-family:'DM Mono',monospace;font-size:11px;opacity:0.7;"></span></button>
+    </div>
+    <div id="home-type-sections"></div>
+    <div id="home-archive-sections" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="screen-detail">
+  <div class="detail-wrap">
+    <div id="detail-alerts"></div>
+    <div class="detail-cols">
+      <div>
+        <div id="detail-progress-summary"></div>
+        <div class="inf-list-header">
+          <h2 id="detail-inf-heading"></h2>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div id="detail-reset-area"></div>
+            <button class="btn" style="font-size:12px;padding:5px 12px;" onclick="openExcelModal()">📥 Excelで追加</button>
+            <button class="btn" style="font-size:12px;padding:5px 12px;" onclick="openAddInfModal()">＋ 手動で追加</button>
+          </div>
+        </div>
+        <div id="detail-inf-list"></div>
+        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:right;">
+          <button id="complete-btn" class="btn" style="font-size:12px;padding:6px 16px;" onclick="toggleProjectComplete()"></button>
+        </div>
+      </div>
+      <div>
+        <div class="schedule-panel">
+          <div class="schedule-panel-header">
+            <h3>📅 スケジュール</h3>
+            <p>日付・場所を入力するとアラートが出ます</p>
+          </div>
+          <div class="schedule-list" id="detail-schedule"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="modal-add-project">
+  <div class="modal">
+    <div class="modal-head"><h2>新規案件を追加</h2><button class="modal-close" onclick="closeModal('modal-add-project')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">案件名 *</label><input class="form-input" id="f-proj-name" type="text" placeholder="例：わんちゃんフードPR 2026夏"></div>
+      <div class="form-row"><label class="form-label">案件タイプ *</label>
+        <select class="form-select" id="f-proj-type">
+          <option value="pr">PR投稿案件</option>
+          <option value="shoot">撮影案件</option>
+          <option value="video">素材提供案件</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-add-project')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitAddProject()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Influencer Modal -->
+<div class="modal-overlay" id="modal-add-inf">
+  <div class="modal">
+    <div class="modal-head"><h2>インフルエンサーを追加</h2><button class="modal-close" onclick="closeModal('modal-add-inf')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-section-label">基本情報</div>
+      <div class="form-grid2">
+        <div class="form-row"><label class="form-label">名前 *</label><input class="form-input" id="f-inf-name" type="text" placeholder="例：いぬむぎ"></div>
+        <div class="form-row"><label class="form-label">SNSアカウント名</label><input class="form-input" id="f-inf-account" type="text" placeholder="例：@inumugi_life"></div>
+        <div class="form-row"><label class="form-label">フォロワー数</label><input class="form-input" id="f-inf-followers" type="text" placeholder="例：18.4万"></div>
+        <div class="form-row"><label class="form-label">ペット名（種類）</label><input class="form-input" id="f-inf-pet" type="text" placeholder="例：むぎ（トイプードル）"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">ペット種別</label>
+        <div class="platform-row">
+          <label class="platform-label"><input type="radio" name="f-pet-type" value="dog" checked> 🐶 犬</label>
+          <label class="platform-label"><input type="radio" name="f-pet-type" value="cat"> 🐱 猫</label>
+          <label class="platform-label"><input type="radio" name="f-pet-type" value="other"> 🐾 その他</label>
+        </div>
+      </div>
+      <div class="form-row"><label class="form-label">プロフィールURL</label><input class="form-input" id="f-inf-url" type="text" placeholder="例：https://www.instagram.com/inumugi_life"></div>
+      <div class="form-row">
+        <label class="form-label">プラットフォーム</label>
+        <div class="platform-row">
+          <label class="platform-label"><input type="checkbox" id="f-pl-ig" value="instagram"> Instagram</label>
+          <label class="platform-label"><input type="checkbox" id="f-pl-tt" value="tiktok"> TikTok</label>
+          <label class="platform-label"><input type="checkbox" id="f-pl-yt" value="youtube"> YouTube</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-add-inf')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitAddInf()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Excel Import Modal -->
+<div class="modal-overlay" id="modal-excel">
+  <div class="modal">
+    <div class="modal-head"><h2>📥 Excelからインポート</h2><button class="modal-close" onclick="closeModal('modal-excel')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--blue-bg);border:1px solid rgba(26,79,130,0.15);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px;">列構成：名前 / アカウント名 / URL / フォロワー数 / ペット名 / プラットフォーム / ペット種別(dog・cat・other)</div>
+        <button class="btn" style="font-size:11px;padding:4px 12px;" onclick="downloadTemplate()">📄 テンプレートをダウンロード（CSV）</button>
+      </div>
+      <div class="form-row">
+        <label class="form-label">ExcelまたはCSVファイルを選択</label>
+        <div id="drop-zone" style="border:2px dashed var(--border2);border-radius:var(--radius);padding:28px;text-align:center;cursor:pointer;transition:background .15s;" onclick="document.getElementById('excel-file-input').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <div style="font-size:24px;margin-bottom:6px;">📂</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:3px;">クリックまたはドラッグ＆ドロップ</div>
+          <div style="font-size:11px;color:var(--text3);">.xlsx / .xls / .csv に対応</div>
+        </div>
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="onFileSelected(this)">
+      </div>
+      <div id="excel-preview" style="display:none;">
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);">プレビュー（取り込み前に確認）</div>
+        <div id="excel-preview-table"></div>
+        <div id="excel-import-count" style="font-size:12px;color:var(--accent);margin-top:8px;font-weight:500;"></div>
+      </div>
+      <div id="excel-error" style="display:none;background:var(--red-bg);border:1px solid rgba(184,50,50,0.2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--red);margin-top:10px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-excel')">キャンセル</button>
+      <button class="btn btn-primary" id="excel-import-btn" onclick="doImport()" disabled style="opacity:0.4;">取り込む</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATUS DEFINITIONS =====
+
+// 共通前半フロー（全案件タイプ）
+const COMMON_FLOW = [
+  { key:'interest',  label:'興味確認',         options:['未確認','確認中','興味あり','興味なし'] },
+  { key:'offer',     label:'オファー連絡',      options:['未対応','オファー済み','アサインなし'] },
+];
+
+const PR_FLOW = [
+  { key:'sample_check', label:'サンプル確認',   options:['不要','未送付','送付済','確認済','NG'] },
+  { key:'structure', label:'構成案',            options:['不要','提出待ち','提出済','クライアント確認中','修正依頼中','修正済・確認中','確認完了'] },
+  { key:'draft',     label:'投稿制作',          options:['制作待ち','制作中','提出済','クライアント確認中','修正依頼中','修正済・確認中','確認完了'] },
+  { key:'post_wait', label:'投稿待ち',          options:['待機中','投稿日確定','投稿済'] },
+  { key:'post_check',label:'投稿チェック',      options:['未確認','確認済','完了'] },
+];
+
+const SHOOT_FLOW = [
+  { key:'datetime',         label:'撮影日時',      options:['未定','調整中','確定','完了'] },
+  { key:'location',         label:'撮影場所',      options:['未定','調整中','確定'] },
+  { key:'weather_decision', label:'天候判断',      options:['未連絡','連絡済み'] },
+  { key:'shooting',         label:'撮影',          options:['撮影待ち','撮影済み'] },
+  { key:'complete',         label:'完成物共有',    options:['未対応','共有済','完了'] },
+];
+
+const VIDEO_FLOW = [
+  { key:'provide',   label:'素材提供',          options:['未提供','提供済'] },
+  { key:'ad_complete',label:'広告完成報告',     options:['未対応','報告済'] },
+];
+
+// スケジュールパネル定義
+// done_when: このステータスに1人でも該当する人がいればアラート表示（全員完了ならアラートなし）
+// done_statuses: これらのステータスは「完了済み」扱い
+const SCHEDULE_DEF = {
+  pr: [
+    { key:'offer_reply_date',  label:'オファー回答予定日', type:'date',
+      done_statuses: ['オファー済み','アサインなし'], check_key:'offer' },
+    { key:'structure_due',     label:'構成案提出期限',     type:'date',
+      done_statuses: ['不要','提出済','クライアント確認中','修正依頼中','修正済・確認中','確認完了'], check_key:'structure' },
+    { key:'structure_fix_due', label:'構成案修正提出期限', type:'date',
+      done_statuses: ['不要','修正済・確認中','確認完了'], check_key:'structure',
+      need_statuses: ['修正依頼中'] },
+    { key:'draft_due',         label:'初稿提出期限',       type:'date',
+      done_statuses: ['提出済','クライアント確認中','修正依頼中','修正済・確認中','確認完了','投稿日確定','投稿済'], check_key:'draft' },
+    { key:'draft_fix_due',     label:'修正稿提出期限',     type:'date',
+      done_statuses: ['修正済・確認中','確認完了','投稿日確定','投稿済'], check_key:'draft',
+      need_statuses: ['修正依頼中'] },
+    { key:'post_date',         label:'投稿予定日',         type:'date', alert_prev:true,
+      done_statuses: ['投稿済'], check_key:'post_wait' },
+    { key:'check_due',         label:'投稿確認日',         type:'date',
+      done_statuses: ['確認済','完了'], check_key:'post_check' },
+  ],
+  shoot: [
+    { key:'shoot_datetime',        label:'撮影日時',     type:'date', alert_day:true, alert_prev:true,
+      done_statuses: ['撮影済み'], check_key:'shooting' },
+    { key:'weather_decision_date', label:'天候判断日',   type:'date', alert_day:true,
+      done_statuses: ['連絡済み'], check_key:'weather_decision' },
+    { key:'shoot_location',        label:'撮影場所',     type:'text' },
+    { key:'complete_due',          label:'完成物共有期限', type:'date',
+      done_statuses: ['共有済','完了'], check_key:'complete' },
+  ],
+  video: [
+    { key:'provide_due',  label:'素材提供期限', type:'date', alert_day:true,
+      done_statuses: ['提供済'], check_key:'provide' },
+    { key:'complete_due', label:'完成報告期限', type:'date',
+      done_statuses: ['報告済'], check_key:'ad_complete' },
+  ],
+};
+
+// ===== DATA =====
+let projects = [];
+let nextProjId = 4;
+let nextInfId = 400;
+let currentProjectId = null;
+let currentHomeTab = 'active';
+
+// ===== HELPERS =====
+function daysLeft(d) { if(!d||d===''||d.length<8) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+function petAvatar(petType) {
+  if (petType === 'dog') return '🐶';
+  if (petType === 'cat') return '🐱';
+  return '🐾';
+}
+
+function getFlow(type) {
+  if (type==='pr') return [...COMMON_FLOW, ...PR_FLOW];
+  if (type==='shoot') return [...COMMON_FLOW, ...SHOOT_FLOW];
+  return [...COMMON_FLOW, ...VIDEO_FLOW];
+}
+
+function pillClass(val) {
+  if (!val) return 'pill-wait';
+  const done = ['興味あり','確認完了','オファー済み','送付済','確認済','不要','提出済','修正済・確認中','投稿日確定','投稿済','完了','共有済','提供済','報告済','確定'];
+  const progress = ['確認中','クライアント確認中','制作中','調整中'];
+  const amber = ['修正依頼中'];
+  const bad = ['アサインなし','興味なし','NG'];
+  const wait = ['未確認','未対応','未定','未送付','待機中','制作待ち','提出待ち'];
+  if (bad.includes(val)) return 'pill-red';
+  if (done.includes(val)) return 'pill-done';
+  if (progress.includes(val)) return 'pill-progress';
+  if (amber.includes(val)) return 'pill-amber';
+  if (wait.includes(val)) return 'pill-wait';
+  return 'pill-wait';
+}
+
+// 完了判定（進捗バー用）
+function isDraftDone(inf, type) {
+  if (type==='pr') {
+    // 投稿チェックが「確認済」または「完了」になったら完了
+    return ['確認済','完了'].includes(inf.status.post_check);
+  }
+  if (type==='shoot') {
+    return inf.status.shooting === '撮影済み';
+  }
+  if (type==='video') {
+    // 素材を受け取ったら完了
+    return ['提供済'].includes(inf.status.provide);
+  }
+  return false;
+}
+
+function draftProgressLabel(type) {
+  if (type==='pr') return '投稿チェック完了';
+  if (type==='shoot') return '撮影済み';
+  return '素材受領';
+}
+
+function getAlerts(p) {
+  const alerts = [];
+  const sdef = SCHEDULE_DEF[p.type] || [];
+  const infs = p.influencers;
+
+  sdef.forEach(s => {
+    if (s.type !== 'date') return;
+    const dl = daysLeft(p.schedule[s.key]);
+    if (dl === null) return;
+
+    // ステータスチェック：全員完了済みならアラートを出さない
+    if (s.check_key) {
+      if (infs.length === 0) return; // インフルエンサーがいない場合はアラート不要
+      if (s.need_statuses) {
+        const hasNeeded = infs.some(inf => s.need_statuses.includes(inf.status[s.check_key]));
+        if (!hasNeeded) return;
+      } else if (s.done_statuses) {
+        const allDone = infs.every(inf => {
+          const val = inf.status[s.check_key];
+          const isDone = s.done_statuses.includes(val);
+          if (s.key === 'draft_due' && !isDone) {
+            console.log('未完了:', inf.name, 'val=[' + val + ']', 'charCodes:', [...val].map(c=>c.charCodeAt(0)));
+          }
+          return isDone;
+        });
+        if (allDone) return;
+      }
+    }
+
+    if (s.alert_prev && dl === 1) alerts.push({ label: s.label+'の前日', dl:1, level:'red' });
+    if (s.alert_day  && dl === 0) alerts.push({ label: s.label+'（本日）', dl:0, level:'red' });
+    if (dl < 0) alerts.push({ label: s.label+'を'+Math.abs(dl)+'日超過', dl, level:'red' });
+    else if (dl <= 3) alerts.push({ label: s.label+'まで'+(dl===0?'今日':dl+'日'), dl, level: dl===0?'red':'amber' });
+  });
+  return alerts;
+}
+
+// ===== HOME =====
+function switchHomeTab(tab) {
+  currentHomeTab = tab;
+  document.getElementById('tab-active').classList.toggle('active', tab==='active');
+  document.getElementById('tab-archive').classList.toggle('active', tab==='archive');
+  document.getElementById('home-type-sections').style.display = tab==='active' ? '' : 'none';
+  document.getElementById('home-archive-sections').style.display = tab==='archive' ? '' : 'none';
+  renderHome();
+}
+
+function renderHome() {
+  const typeGroups = [
+    { key:'pr', label:'PR投稿案件', barClass:'bar-pr' },
+    { key:'shoot', label:'撮影案件', barClass:'bar-shoot' },
+    { key:'video', label:'素材提供案件', barClass:'bar-video' },
+  ];
+
+  // 進行中タブ
+  const activeProjects = projects.filter(p=>!p.completed);
+  let html = '';
+  typeGroups.forEach(g => {
+    const list = activeProjects.filter(p=>p.type===g.key);
+    if (!list.length) return;
+    html += `<div class="type-section"><div class="type-heading"><div class="type-heading-bar ${g.barClass}"></div><span class="type-heading-label">${g.label}</span><span class="type-heading-count">${list.length}件</span></div>`;
+    list.forEach(p => {
+      const alerts = getAlerts(p);
+      let alertHtml = '';
+      if (alerts.length) {
+        const a = alerts[0];
+        alertHtml = `<span class="pr-alert ${a.level}">${a.level==='red'?'⚠':'⏰'} ${a.label}</span>`;
+      }
+      html += `<div class="project-row" onclick="openProject(${p.id})">
+        <span class="project-row-name" style="${p.isSample?'color:var(--blue);opacity:0.7;':''}">${p.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">${alertHtml}<span class="arrow-icon">›</span></div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  if (!html) html = '<div class="empty">進行中の案件がありません。</div>';
+  document.getElementById('home-type-sections').innerHTML = html;
+
+  // 完了済みタブ
+  const doneProjects = projects.filter(p=>p.completed);
+  const archiveCount = doneProjects.length;
+  document.getElementById('archive-count').textContent = archiveCount > 0 ? `(${archiveCount})` : '';
+
+  let archiveHtml = '';
+  if (!doneProjects.length) {
+    archiveHtml = '<div class="empty">完了済みの案件はありません。</div>';
+  } else {
+    typeGroups.forEach(g => {
+      const list = doneProjects.filter(p=>p.type===g.key);
+      if (!list.length) return;
+      archiveHtml += `<div class="type-section"><div class="type-heading"><div class="type-heading-bar ${g.barClass}"></div><span class="type-heading-label">${g.label}</span><span class="type-heading-count">${list.length}件</span></div>`;
+      list.forEach(p => {
+        archiveHtml += `<div class="archive-row" onclick="openProject(${p.id})">
+          <span class="archive-row-name">${p.name}</span>
+          <span class="archive-badge">✓ 完了</span>
+          <span class="archive-date">${p.completedAt||''}</span>
+          <span class="arrow-icon">›</span>
+        </div>`;
+      });
+      archiveHtml += '</div>';
+    });
+  }
+  document.getElementById('home-archive-sections').innerHTML = archiveHtml;
+}
+
+// ===== DETAIL =====
+function openProject(id) {
+  currentProjectId = id;
+  const p = projects.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('screen-home').classList.remove('active');
+  document.getElementById('screen-detail').classList.add('active');
+  document.getElementById('nav-back').style.display = 'flex';
+  renderNavTitle(p);
+  renderDetail(p);
+}
+
+function renderNavTitle(p) {
+  const nav = document.getElementById('nav-title');
+  nav.innerHTML = '';
+  const input = document.createElement('input');
+  input.value = p.name;
+  input.style.cssText = 'background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:5px;color:#fff;font-size:13px;padding:4px 10px;font-family:inherit;width:280px;outline:none;';
+  input.addEventListener('focus', () => { input.style.background='rgba(255,255,255,0.18)'; });
+  input.addEventListener('blur',  () => { input.style.background='rgba(255,255,255,0.1)'; });
+  input.addEventListener('change', () => {
+    const val = input.value.trim();
+    if (!val) { input.value = p.name; return; }
+    p.name = val;
+    p.isSample = false;
+    renderHome();
+  });
+  input.addEventListener('keydown', e => { if (e.key==='Enter') input.blur(); });
+  nav.appendChild(input);
+}
+
+function renderDetail(p) {
+  // Alerts
+  const alerts = getAlerts(p);
+  document.getElementById('detail-alerts').innerHTML = alerts.map(a =>
+    `<div class="alert-banner ${a.level==='amber'?'amber':''}"><span>${a.level==='red'?'🔔':'⏰'}</span><div class="alert-banner-text"><strong>${a.label}</strong></div></div>`
+  ).join('');
+
+  // 前日アラート for shoot
+  if (p.type==='shoot' && p.schedule.shoot_datetime) {
+    const dl = daysLeft(p.schedule.shoot_datetime);
+    if (dl===1) document.getElementById('detail-alerts').innerHTML += `<div class="alert-banner"><span>📸</span><div class="alert-banner-text"><strong>明日が撮影日です。前日確認を行ってください。</strong></div></div>`;
+    if (dl===0) document.getElementById('detail-alerts').innerHTML += `<div class="alert-banner"><span>📸</span><div class="alert-banner-text"><strong>本日は撮影日です。終了後にお礼を送りましょう。</strong></div></div>`;
+  }
+
+  // Progress（オファー済みのみカウント）
+  const activeInf = p.influencers.filter(inf=>inf.status.offer==='オファー済み');
+  const draftDone = activeInf.filter(inf=>isDraftDone(inf,p.type));
+  const draftUndone = activeInf.filter(inf=>!isDraftDone(inf,p.type));
+  const pct = activeInf.length > 0 ? Math.round(draftDone.length/activeInf.length*100) : 0;
+  const unsubChips = draftUndone.map(inf =>
+    `<span class="unsub-chip" onclick="scrollToInf(${inf.id})">${inf.account}</span>`
+  ).join('');
+  let progressFooter;
+  if (activeInf.length === 0) {
+    progressFooter = '<div style="font-size:12px;color:var(--text3);margin-top:6px">オファー済みがいません</div>';
+  } else if (draftUndone.length > 0) {
+    progressFooter = `<div class="progress-unsub-label">未完了（クリックでジャンプ）</div><div class="unsub-chips">${unsubChips}</div>`;
+  } else {
+    progressFooter = '<div style="font-size:12px;color:var(--accent);margin-top:6px">✓ 全員完了</div>';
+  }
+  document.getElementById('detail-progress-summary').innerHTML = `
+    <div class="progress-summary">
+      <div class="progress-summary-title">${draftProgressLabel(p.type)}の進捗（オファー済み ${activeInf.length}名）</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <span class="progress-numbers">${draftDone.length} / ${activeInf.length}</span>
+      </div>
+      ${progressFooter}
+    </div>`;
+
+  // アサインなしリセットボタン
+  const notAssigned = p.influencers.filter(inf=>inf.status.offer==='アサインなし');
+  const resetBtn = notAssigned.length > 0
+    ? `<button onclick="clearNotAssigned(${p.id})" style="font-size:11px;color:var(--red);background:none;border:1px solid rgba(184,50,50,0.3);border-radius:4px;padding:3px 10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">アサインなし(${notAssigned.length}名)を削除</button>` : '';
+  document.getElementById('detail-inf-heading').textContent = '';
+  document.getElementById('detail-inf-heading').innerHTML =
+    `アサイン中 ${p.influencers.length}名 <span style="font-size:12px;font-weight:400;color:var(--text3);">（オファー済み ${activeInf.length}名）</span>`;
+
+  // 一括リセットボタンを inf-list-header の外に追加
+  const resetArea = document.getElementById('detail-reset-area');
+  if (resetArea) resetArea.innerHTML = resetBtn;
+
+  // Inf cards（アサイン中 / アサインなし に分けて表示）
+  const flow = getFlow(p.type);
+  const assignedInf = p.influencers.filter(inf=>inf.status.offer!=='アサインなし');
+  const notAssignedInf = p.influencers.filter(inf=>inf.status.offer==='アサインなし');
+
+  function buildCard(inf) {
+    const platHtml = inf.platforms.map(pl =>
+      pl==='instagram' ? '<span style="background:#E1306C;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace">IG</span>' :
+      pl==='tiktok'    ? '<span style="background:#111;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace">TT</span>' :
+                         '<span style="background:#FF0000;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace">YT</span>'
+    ).join('');
+    const keyStatus = p.type==='pr' ? inf.status.draft : p.type==='shoot' ? inf.status.datetime : inf.status.provide;
+    const keyLabel = p.type==='pr' ? '初稿' : p.type==='shoot' ? '撮影' : '提供';
+    const summaryPills = `
+      <span class="pill ${pillClass(inf.status.offer)}">${inf.status.offer}</span>
+      <span class="pill ${pillClass(keyStatus)}">${keyLabel}: ${keyStatus}</span>`;
+    const commonRows = COMMON_FLOW.map(f => flowRow(inf, p.id, f)).join('');
+    const typeFlow = p.type==='pr'?PR_FLOW:p.type==='shoot'?SHOOT_FLOW:VIDEO_FLOW;
+    const typeRows = typeFlow.map(f => flowRow(inf, p.id, f)).join('');
+    return `<div class="inf-card" id="inf-card-${inf.id}">
+      <div class="inf-card-header" onclick="toggleInf(${inf.id})">
+        <div class="inf-avatar">${petAvatar(inf.petType)}</div>
+        <div class="inf-main">
+          <div class="inf-top-row">
+            <span class="inf-name">${inf.name}</span>
+            <span class="inf-account">${inf.account}</span>
+            <span style="display:flex;gap:3px">${platHtml}</span>
+          </div>
+          <div class="inf-sub">${inf.followers} · ${inf.petName}</div>
+          <div class="inf-status-row">${summaryPills}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button onclick="event.stopPropagation();deleteInf(${p.id},${inf.id})" style="font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;" title="削除">✕</button>
+          <span class="expand-icon" id="expand-${inf.id}">▼</span>
+        </div>
+      </div>
+      <div class="inf-card-body" id="inf-body-${inf.id}">
+        <div class="inf-detail-meta">
+          <span class="inf-meta-item">🔗 <a href="${inf.url}" target="_blank">${inf.url}</a></span>
+          <span class="inf-meta-item" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text3);">ペット種別:</span>
+            <label style="font-size:12px;cursor:pointer;"><input type="radio" name="pet-type-${inf.id}" value="dog" ${inf.petType==='dog'?'checked':''} onchange="updatePetType(${p.id},${inf.id},'dog')"> 🐶 犬</label>
+            <label style="font-size:12px;cursor:pointer;"><input type="radio" name="pet-type-${inf.id}" value="cat" ${inf.petType==='cat'?'checked':''} onchange="updatePetType(${p.id},${inf.id},'cat')"> 🐱 猫</label>
+            <label style="font-size:12px;cursor:pointer;"><input type="radio" name="pet-type-${inf.id}" value="other" ${(!inf.petType||inf.petType==='other')?'checked':''} onchange="updatePetType(${p.id},${inf.id},'other')"> 🐾 その他</label>
+          </span>
+          <span class="inf-meta-item" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text3);">プラットフォーム:</span>
+            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">
+              <input type="checkbox" ${inf.platforms.includes('instagram')?'checked':''} onchange="togglePlatform(${p.id},${inf.id},'instagram',this.checked)">
+              <span style="background:#E1306C;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px;font-family:'DM Mono',monospace;">IG</span>
+            </label>
+            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">
+              <input type="checkbox" ${inf.platforms.includes('tiktok')?'checked':''} onchange="togglePlatform(${p.id},${inf.id},'tiktok',this.checked)">
+              <span style="background:#111;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px;font-family:'DM Mono',monospace;">TT</span>
+            </label>
+            <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">
+              <input type="checkbox" ${inf.platforms.includes('youtube')?'checked':''} onchange="togglePlatform(${p.id},${inf.id},'youtube',this.checked)">
+              <span style="background:#FF0000;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px;font-family:'DM Mono',monospace;">YT</span>
+            </label>
+          </span>
+        </div>
+        <div class="flow-section">
+          <div class="flow-section-label">共通フロー</div>
+          ${commonRows}
+        </div>
+        <div class="flow-section">
+          <div class="flow-section-label">${p.type==='pr'?'PR投稿フロー':p.type==='shoot'?'撮影フロー':'素材提供フロー'}</div>
+          ${typeRows}
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);">メモ</div>
+          <textarea id="memo-${inf.id}" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--surface);resize:vertical;min-height:72px;line-height:1.7;display:block;" placeholder="特記事項・連絡内容など" onchange="updateMemo(${p.id},${inf.id},this.value)" onfocus="this.style.borderColor='var(--border2)'" onblur="this.style.borderColor='var(--border)'">${inf.memo||''}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  let infHtml = '';
+  if (p.influencers.length === 0) {
+    infHtml = '<div class="empty">インフルエンサーがいません</div>';
+  } else {
+    // アサイン中グループ
+    if (assignedInf.length > 0) {
+      infHtml += assignedInf.map(buildCard).join('');
+    }
+    // アサインなしグループ
+    if (notAssignedInf.length > 0) {
+      infHtml += `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;padding-top:12px;border-top:1px solid var(--border);">アサインなし（${notAssignedInf.length}名）</div>`;
+      infHtml += notAssignedInf.map(inf => `<div style="opacity:0.55">${buildCard(inf)}</div>`).join('');
+    }
+  }
+  document.getElementById('detail-inf-list').innerHTML = infHtml;
+
+  // Schedule panel
+  const sdef = SCHEDULE_DEF[p.type] || [];
+  let schedHtml = '';
+  sdef.forEach(s => {
+    const val = p.schedule[s.key] || '';
+    const dl = s.type==='date' ? daysLeft(val) : null;
+
+    // 全員完了済みなら超過表示をしない
+    if (s.check_key && s.done_statuses && p.influencers.length > 0) {
+      const allDone = p.influencers.every(inf => s.done_statuses.includes(inf.status[s.check_key]));
+      if (allDone && dl !== null && dl < 0) {
+        // 超過だが全員完了 → グレーの完了ドットで表示
+        const inputHtml = `<input class="schedule-date-input" type="date" value="${val}" onchange="updateSchedule(${p.id},'${s.key}',this.value)">`;
+        schedHtml += `<div class="schedule-item">
+          <div class="schedule-dot dot-done"></div>
+          <div class="schedule-content">
+            <div class="schedule-milestone">${s.label}</div>
+            <div class="schedule-date-row">${inputHtml}<span style="color:var(--accent);font-size:11px">✓ 完了</span></div>
+          </div>
+        </div>`;
+        return;
+      }
+    }
+
+    let dotClass = 'dot-future';
+    let remainHtml = '';
+    if (s.type==='date' && val) {
+      if (dl < 0) { dotClass='dot-alert'; remainHtml=`<span style="color:var(--red);font-size:11px">${Math.abs(dl)}日超過</span>`; }
+      else if (dl===0) { dotClass='dot-alert'; remainHtml=`<span style="color:var(--red);font-size:11px">今日！</span>`; }
+      else if (dl<=3) { dotClass='dot-near'; remainHtml=`<span style="color:var(--amber);font-size:11px">あと${dl}日</span>`; }
+      else { dotClass='dot-future'; remainHtml=`<span style="color:var(--text3);font-size:11px">あと${dl}日</span>`; }
+    }
+    const inputHtml = s.type==='date'
+      ? `<input class="schedule-date-input" type="date" value="${val}" onchange="updateSchedule(${p.id},'${s.key}',this.value)">`
+      : `<input class="schedule-text-input" type="text" value="${val}" placeholder="例：東京スタジオA" onchange="updateSchedule(${p.id},'${s.key}',this.value)">`;
+
+    const extras = [];
+    if (s.alert_prev) extras.push('<span style="font-size:10px;color:var(--text3)">前日アラートあり</span>');
+    if (s.alert_day)  extras.push('<span style="font-size:10px;color:var(--text3)">当日アラートあり</span>');
+
+    schedHtml += `<div class="schedule-item">
+      <div class="schedule-dot ${dotClass}"></div>
+      <div class="schedule-content">
+        <div class="schedule-milestone">${s.label}</div>
+        <div class="schedule-date-row">${inputHtml}${remainHtml}</div>
+        ${extras.length ? `<div style="margin-top:2px">${extras.join(' ')}</div>` : ''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('detail-schedule').innerHTML = schedHtml;
+
+  // Complete button
+  const btn = document.getElementById('complete-btn');
+  if (p.completed) {
+    btn.textContent = '↩ 進行中に戻す';
+    btn.style.color = 'var(--text3)';
+    btn.style.borderColor = 'var(--border)';
+  } else {
+    btn.textContent = '✓ この案件を完了にする';
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+  }
+}
+
+function flowRow(inf, projId, f) {
+  const val = inf.status[f.key] || f.options[0];
+  const opts = f.options.map(o=>`<option${o===val?' selected':''}>${o}</option>`).join('');
+  return `<div class="flow-row">
+    <span class="flow-label">${f.label}</span>
+    <div class="flow-val">
+      <select class="status-select" onchange="updateStatus(${projId},${inf.id},'${f.key}',this.value)">${opts}</select>
+    </div>
+  </div>`;
+}
+
+function toggleInf(id) {
+  const body = document.getElementById('inf-body-'+id);
+  const icon = document.getElementById('expand-'+id);
+  if (!body) return;
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+function scrollToInf(id) {
+  const el = document.getElementById('inf-card-'+id);
+  if (!el) return;
+  el.scrollIntoView({ behavior:'smooth', block:'center' });
+  const body = document.getElementById('inf-body-'+id);
+  const icon = document.getElementById('expand-'+id);
+  if (body && !body.classList.contains('open')) { body.classList.add('open'); if(icon) icon.classList.add('open'); }
+  el.classList.add('highlight');
+  setTimeout(()=>el.classList.remove('highlight'), 2000);
+}
+
+function updateStatus(projId, infId, key, val) {
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  const inf = p.influencers.find(x=>x.id===infId);
+  if (!inf) return;
+  inf.status[key] = val;
+  const pillRow = document.querySelector(`#inf-card-${infId} .inf-status-row`);
+  if (pillRow) {
+    const keyStatus = p.type==='pr' ? inf.status.draft : p.type==='shoot' ? inf.status.datetime : inf.status.provide;
+    const keyLabel  = p.type==='pr' ? '初稿' : p.type==='shoot' ? '撮影' : '提供';
+    pillRow.innerHTML = `
+      <span class="pill ${pillClass(inf.status.offer)}">${inf.status.offer}</span>
+      <span class="pill ${pillClass(keyStatus)}">${keyLabel}: ${keyStatus}</span>`;
+  }
+  renderProgressOnly(p);
+  renderHome();
+  saveToGas();
+}
+
+function updateSchedule(projId, key, val) {
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  p.schedule[key] = val;
+  renderDetail(p);
+  renderHome();
+  saveToGas();
+}
+
+function renderProgressOnly(p) {
+  // アラートバナー更新
+  const alerts = getAlerts(p);
+  let alertsHtml = alerts.map(a =>
+    `<div class="alert-banner ${a.level==='amber'?'amber':''}"><span>${a.level==='red'?'🔔':'⏰'}</span><div class="alert-banner-text"><strong>${a.label}</strong></div></div>`
+  ).join('');
+  if (p.type==='shoot' && p.schedule.shoot_datetime) {
+    const dl = daysLeft(p.schedule.shoot_datetime);
+    if (dl===1) alertsHtml += `<div class="alert-banner"><span>📸</span><div class="alert-banner-text"><strong>明日が撮影日です。前日確認を行ってください。</strong></div></div>`;
+    if (dl===0) alertsHtml += `<div class="alert-banner"><span>📸</span><div class="alert-banner-text"><strong>本日は撮影日です。終了後にお礼を送りましょう。</strong></div></div>`;
+  }
+  document.getElementById('detail-alerts').innerHTML = alertsHtml;
+
+  // 進捗バー更新
+  const activeInf = p.influencers.filter(inf=>inf.status.offer==='オファー済み');
+  const draftDone  = activeInf.filter(inf=>isDraftDone(inf,p.type));
+  const draftUndone = activeInf.filter(inf=>!isDraftDone(inf,p.type));
+  const pct = activeInf.length > 0 ? Math.round(draftDone.length/activeInf.length*100) : 0;
+  const unsubChips = draftUndone.map(inf =>
+    `<span class="unsub-chip" onclick="scrollToInf(${inf.id})">${inf.account}</span>`
+  ).join('');
+  let progressFooter;
+  if (activeInf.length === 0) {
+    progressFooter = '<div style="font-size:12px;color:var(--text3);margin-top:6px">オファー済みがいません</div>';
+  } else if (draftUndone.length > 0) {
+    progressFooter = `<div class="progress-unsub-label">未完了（クリックでジャンプ）</div><div class="unsub-chips">${unsubChips}</div>`;
+  } else {
+    progressFooter = '<div style="font-size:12px;color:var(--accent);margin-top:6px">✓ 全員完了</div>';
+  }
+  document.getElementById('detail-progress-summary').innerHTML = `
+    <div class="progress-summary">
+      <div class="progress-summary-title">${draftProgressLabel(p.type)}の進捗（オファー済み ${activeInf.length}名）</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <span class="progress-numbers">${draftDone.length} / ${activeInf.length}</span>
+      </div>
+      ${progressFooter}
+    </div>`;
+
+  // リセットボタン更新
+  const notAssigned = p.influencers.filter(inf=>inf.status.offer==='アサインなし');
+  const resetBtn = notAssigned.length > 0
+    ? `<button onclick="clearNotAssigned(${p.id})" style="font-size:11px;color:var(--red);background:none;border:1px solid rgba(184,50,50,0.3);border-radius:4px;padding:3px 10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">アサインなし(${notAssigned.length}名)を削除</button>` : '';
+  const resetArea = document.getElementById('detail-reset-area');
+  if (resetArea) resetArea.innerHTML = resetBtn;
+}
+
+function togglePlatform(projId, infId, platform, checked) {
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  const inf = p.influencers.find(x=>x.id===infId);
+  if (!inf) return;
+  if (checked && !inf.platforms.includes(platform)) {
+    inf.platforms.push(platform);
+  } else if (!checked) {
+    inf.platforms = inf.platforms.filter(pl=>pl!==platform);
+    if (inf.platforms.length === 0) inf.platforms = ['instagram']; // 最低1つ維持
+  }
+  // カードヘッダーのアイコン行だけ更新
+  const platRow = document.querySelector(`#inf-card-${infId} .inf-top-row span:last-child`);
+  if (platRow) {
+    platRow.innerHTML = inf.platforms.map(pl =>
+      pl==='instagram' ? '<span style="background:#E1306C;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace">IG</span>' :
+      pl==='tiktok'    ? '<span style="background:#111;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace">TT</span>' :
+                         '<span style="background:#FF0000;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace">YT</span>'
+    ).join('');
+  }
+}
+
+function updatePetType(projId, infId, val) {
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  const inf = p.influencers.find(x=>x.id===infId);
+  if (!inf) return;
+  inf.petType = val;
+  // アバターアイコンだけ更新
+  const avatar = document.querySelector(`#inf-card-${infId} .inf-avatar`);
+  if (avatar) avatar.textContent = petAvatar(val);
+}
+
+function updateMemo(projId, infId, val) {
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  const inf = p.influencers.find(x=>x.id===infId);
+  if (!inf) return;
+  inf.memo = val;
+}
+
+
+// ===== NAVIGATION =====
+function goHome() {
+  currentProjectId = null;
+  document.getElementById('screen-detail').classList.remove('active');
+  document.getElementById('screen-home').classList.add('active');
+  document.getElementById('nav-back').style.display = 'none';
+  document.getElementById('nav-title').textContent = '';
+  switchHomeTab(currentHomeTab);
+}
+
+// ===== COMPLETE / ARCHIVE =====
+function toggleProjectComplete() {
+  const p = projects.find(x=>x.id===currentProjectId);
+  if (!p) return;
+  if (p.completed) {
+    if (!confirm(`「${p.name}」を進行中に戻しますか？`)) return;
+    p.completed = false;
+    p.completedAt = '';
+    currentHomeTab = 'active';
+  } else {
+    if (!confirm(`「${p.name}」を完了にしますか？\n案件一覧の「完了済み」タブに移動します。`)) return;
+    p.completed = true;
+    p.completedAt = today();
+    currentHomeTab = 'archive';
+  }
+  renderDetail(p);
+  renderHome();
+  goHome();
+  saveToGas();
+}
+
+// ===== ADD PROJECT =====
+function openAddProjectModal() { document.getElementById('modal-add-project').classList.add('open'); }
+function submitAddProject() {
+  const name = document.getElementById('f-proj-name').value.trim();
+  if (!name) { alert('案件名を入力してください'); return; }
+  const type = document.getElementById('f-proj-type').value;
+  const schedule = {};
+  (SCHEDULE_DEF[type]||[]).forEach(s=>{ schedule[s.key]=''; });
+  projects.push({ id:nextProjId++, type, name, schedule, influencers:[] });
+  closeModal('modal-add-project');
+  document.getElementById('f-proj-name').value = '';
+  renderHome();
+  saveToGas();
+}
+
+// ===== ADD INFLUENCER =====
+function openAddInfModal() { document.getElementById('modal-add-inf').classList.add('open'); }
+function submitAddInf() {
+  const name = document.getElementById('f-inf-name').value.trim();
+  if (!name) { alert('名前を入力してください'); return; }
+  const p = projects.find(x=>x.id===currentProjectId);
+  if (!p) return;
+  const platforms = ['instagram','tiktok','youtube'].filter(pl => {
+    const id = pl==='instagram'?'ig':pl==='tiktok'?'tt':'yt';
+    return document.getElementById('f-pl-'+id)?.checked;
+  });
+  const flow = getFlow(p.type);
+  const status = {};
+  flow.forEach(f=>{ status[f.key]=f.options[0]; });
+  const petTypeEl = document.querySelector('input[name="f-pet-type"]:checked');
+  const petType = petTypeEl ? petTypeEl.value : 'other';
+  p.influencers.push({
+    id:nextInfId++, name,
+    account: document.getElementById('f-inf-account').value.trim()||'—',
+    followers: document.getElementById('f-inf-followers').value.trim()||'—',
+    petName: document.getElementById('f-inf-pet').value.trim()||'—',
+    petType,
+    url: document.getElementById('f-inf-url').value.trim()||'#',
+    platforms: platforms.length>0?platforms:['instagram'],
+    status,
+  });
+  closeModal('modal-add-inf');
+  ['f-inf-name','f-inf-account','f-inf-followers','f-inf-pet','f-inf-url'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-pl-ig','f-pl-tt','f-pl-yt'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
+  renderDetail(p);
+  renderHome();
+  saveToGas();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-excel') resetExcelModal();
+}
+document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('click', e=>{ if(e.target===el) { el.classList.remove('open'); if(el.id==='modal-excel') resetExcelModal(); } }));
+
+// ===== EXCEL IMPORT =====
+let pendingImportRows = [];
+
+function openExcelModal() {
+  resetExcelModal();
+  document.getElementById('modal-excel').classList.add('open');
+}
+
+function resetExcelModal() {
+  pendingImportRows = [];
+  document.getElementById('excel-file-input').value = '';
+  document.getElementById('excel-preview').style.display = 'none';
+  document.getElementById('excel-preview-table').innerHTML = '';
+  document.getElementById('excel-import-count').textContent = '';
+  document.getElementById('excel-error').style.display = 'none';
+  document.getElementById('excel-import-btn').disabled = true;
+  document.getElementById('excel-import-btn').style.opacity = '0.4';
+  const dz = document.getElementById('drop-zone');
+  dz.style.background = '';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').style.background = 'var(--blue-bg)';
+}
+function onDragLeave(e) {
+  document.getElementById('drop-zone').style.background = '';
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function onFileSelected(input) {
+  if (input.files[0]) processFile(input.files[0]);
+}
+
+function processFile(file) {
+  const errEl = document.getElementById('excel-error');
+  errEl.style.display = 'none';
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    const reader = new FileReader();
+    reader.onload = e => parseXLSX(e.target.result);
+    reader.readAsArrayBuffer(file);
+  } else {
+    showExcelError('.xlsx / .xls / .csv ファイルを選択してください');
+  }
+}
+
+function parseCSV(text) {
+  try {
+    const p = projects.find(x=>x.id===currentProjectId);
+    const type = p?.type || 'pr';
+    // RFC 4180準拠のCSVパーサー（引用符内の改行・カンマに対応）
+    const rows = parseCSVRows(text);
+    if (!rows.length) { showExcelError('データが見つかりませんでした。'); return; }
+    const result = [];
+    for (const cols of rows) {
+      const first = String(cols[0]||'').trim();
+      if (!first || /^(名前|name|氏名|#)/i.test(first)) continue;
+      // ヒント行スキップ（1列目が空で2列目以降にテキストがある行）
+      if (!first && cols.slice(1).some(c=>String(c).trim())) continue;
+      result.push(rowFromCols(cols, type));
+    }
+    if (!result.length) { showExcelError('データが見つかりませんでした。テンプレートの形式を確認してください。'); return; }
+    showPreview(result);
+  } catch(e) { showExcelError('CSVの読み込みに失敗しました: ' + e.message); }
+}
+
+function parseCSVRows(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const rows = [];
+  let col = '', cols = [], inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuote) {
+      if (c === '"') {
+        if (text[i+1] === '"') { col += '"'; i++; }
+        else inQuote = false;
+      } else {
+        // 引用符内の改行・タブはスペースに変換
+        col += (c === '\r' || c === '\n' || c === '\t') ? ' ' : c;
+      }
+    } else {
+      if (c === '"') { inQuote = true; }
+      else if (c === ',') { cols.push(col.trim()); col = ''; }
+      else if (c === '\n' || (c === '\r' && text[i+1] !== '\n')) {
+        cols.push(col.trim()); col = '';
+        if (cols.some(x=>x)) rows.push(cols);
+        cols = [];
+      } else if (c === '\r') { /* skip */ }
+      else { col += c; }
+    }
+  }
+  if (col || cols.length) { cols.push(col.trim()); if (cols.some(x=>x)) rows.push(cols); }
+  // 各セルの末尾改行・スペースをさらにトリム
+  return rows.map(row => row.map(cell => cell.replace(/[\r\n\t]+/g, ' ').trim()));
+}
+
+function parseXLSX(buffer) {
+  // Use SheetJS via CDN
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = () => doParseXLSX(buffer);
+    s.onerror = () => showExcelError('ライブラリの読み込みに失敗しました。CSVをお試しください。');
+    document.head.appendChild(s);
+  } else {
+    doParseXLSX(buffer);
+  }
+}
+
+function doParseXLSX(buffer) {
+  try {
+    const p = projects.find(x=>x.id===currentProjectId);
+    const type = p?.type || 'pr';
+    const wb = XLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    const rows = [];
+    for (let i = 0; i < data.length; i++) {
+      const first = String(data[i]?.[0]||'').trim();
+      if (!first || /^(名前|name|氏名|#)/i.test(first)) continue;
+      rows.push(rowFromCols(data[i], type));
+    }
+    if (!rows.length) { showExcelError('データが見つかりませんでした。テンプレートの形式を確認してください。'); return; }
+    showPreview(rows);
+  } catch(e) { showExcelError('Excelの読み込みに失敗しました: ' + e.message); }
+}
+
+// ===== COLUMN DEFINITIONS PER TYPE =====
+// 列順: 名前 / アカウント名 / URL / フォロワー数 / ペット名 / プラットフォーム / [ステータス列...]
+const TEMPLATE_STATUS_COLS = {
+  pr: [
+    { key:'interest',     label:'興味確認' },
+    { key:'offer',        label:'オファー連絡' },
+    { key:'sample_check', label:'サンプル確認' },
+    { key:'structure',    label:'構成案' },
+    { key:'draft',        label:'投稿制作' },
+    { key:'post_wait',    label:'投稿待ち' },
+    { key:'post_check',   label:'投稿チェック' },
+  ],
+  shoot: [
+    { key:'interest',  label:'興味確認' },
+    { key:'offer',     label:'オファー連絡' },
+    { key:'datetime',  label:'撮影日時' },
+    { key:'location',  label:'撮影場所' },
+    { key:'complete',  label:'完成物共有' },
+  ],
+  video: [
+    { key:'interest',    label:'興味確認' },
+    { key:'offer',       label:'オファー連絡' },
+    { key:'provide',     label:'素材提供' },
+    { key:'ad_complete', label:'広告完成報告' },
+  ],
+};
+
+const BASE_COLS = ['名前','アカウント名','URL','フォロワー数','ペット名（種類）','プラットフォーム'];
+
+function getValidOptions(type, key) {
+  const flow = getFlow(type);
+  const f = flow.find(x=>x.key===key);
+  return f ? f.options : [];
+}
+
+function rowFromCols(cols, type) {
+  const rawPetType = String(cols[6]||'').trim().toLowerCase();
+  const petType = ['dog','cat','other'].includes(rawPetType) ? rawPetType : 'other';
+  return {
+    name:      String(cols[0]||'').trim(),
+    account:   String(cols[1]||'—').trim(),
+    url:       String(cols[2]||'#').trim(),
+    followers: String(cols[3]||'—').trim().replace(/^(\d[\d,]+)$/, m=>m.replace(/,/g,'')),
+    petName:   String(cols[4]||'—').trim(),
+    petType,
+    platforms: parsePlatforms(String(cols[5]||'')),
+    status:    {},
+  };
+}
+
+function parsePlatforms(str) {
+  if (!str) return ['instagram'];
+  const pls = str.toLowerCase().split(/[,、\s]+/).map(s=>s.trim()).filter(Boolean);
+  const valid = pls.filter(p=>['instagram','tiktok','youtube'].includes(p));
+  return valid.length > 0 ? valid : ['instagram'];
+}
+
+function showPreview(rows) {
+  pendingImportRows = rows;
+  const tableHtml = `
+    <div style="overflow-x:auto;max-height:220px;overflow-y:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="background:var(--surface2);">
+        <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">名前</th>
+        <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">アカウント</th>
+        <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">フォロワー</th>
+        <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">ペット名</th>
+        <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">プラットフォーム</th>
+        <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">種別</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);font-weight:500;">${r.name}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;color:var(--blue);">${r.account}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${r.followers}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${r.petName}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${r.platforms.join(', ')}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${petAvatar(r.petType)} ${r.petType}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`;
+  document.getElementById('excel-preview-table').innerHTML = tableHtml;
+  document.getElementById('excel-import-count').textContent = `✓ ${rows.length}名を取り込めます`;
+  document.getElementById('excel-preview').style.display = 'block';
+  const btn = document.getElementById('excel-import-btn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+
+function showExcelError(msg) {
+  const el = document.getElementById('excel-error');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+function doImport() {
+  const p = projects.find(x=>x.id===currentProjectId);
+  if (!p || !pendingImportRows.length) return;
+  // ID が 500未満（サンプルデータ）を削除、手動追加・前回インポート分は残す
+  // ただし確認ダイアログで全削除も選べる
+  const sampleInfs = p.influencers.filter(inf => inf.id < 500 || inf.isSample);
+  const realInfs   = p.influencers.filter(inf => inf.id >= 500 && !inf.isSample);
+  if (realInfs.length > 0) {
+    const choice = confirm(
+      `すでに${realInfs.length}名のインフルエンサーがいます。\n\n` +
+      `OK → 既存を全員削除して新しいデータに置き換える\n` +
+      `キャンセル → 既存に追加する`
+    );
+    if (choice) {
+      p.influencers = [];
+    } else {
+      // サンプルだけ削除して既存は残す
+      p.influencers = realInfs;
+    }
+  } else {
+    // サンプルのみの場合は全削除
+    p.influencers = [];
+  }
+  const flow = getFlow(p.type);
+  pendingImportRows.forEach(r => {
+    const status = {};
+    flow.forEach(f=>{ status[f.key] = f.options[0]; });
+    Object.assign(status, r.status);
+    p.influencers.push({ id:nextInfId++, name:r.name, account:r.account, url:r.url, followers:r.followers, petName:r.petName, petType:r.petType||'other', platforms:r.platforms, status, memo:'' });
+  });
+  closeModal('modal-excel');
+  renderDetail(p);
+  renderHome();
+  saveToGas();
+}
+
+function deleteInf(projId, infId) {
+  if (!confirm('このインフルエンサーを削除しますか？')) return;
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  p.influencers = p.influencers.filter(x=>x.id!==infId);
+  renderDetail(p);
+  renderHome();
+  saveToGas();
+}
+
+function clearNotAssigned(projId) {
+  if (!confirm('アサインなしの全員を削除しますか？')) return;
+  const p = projects.find(x=>x.id===projId);
+  if (!p) return;
+  p.influencers = p.influencers.filter(inf=>inf.status.offer!=='アサインなし');
+  renderDetail(p);
+  renderHome();
+  saveToGas();
+}
+
+function downloadTemplate(type) {
+  const header = '名前,アカウント名,URL,フォロワー数,ペット名（種類）,プラットフォーム,ペット種別';
+  const hint   = '#この行は削除してください / プラットフォーム: instagram・tiktok・youtube（複数はカンマ区切り） / ペット種別: dog・cat・other';
+  const sample = 'いぬむぎ,@inumugi_life,https://www.instagram.com/inumugi_life,18.4万,むぎ（トイプードル）,instagram,dog';
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + header + '\n' + hint + '\n' + sample], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'influencer_template.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== GOOGLE APPS SCRIPT 連携 =====
+let gasUrl = localStorage.getItem('pet_gas_url') || '';
+
+function initGas() {
+  if (gasUrl) {
+    document.getElementById('sync-status-btn').textContent = '✓ 連携中';
+    document.getElementById('sync-btn').style.display = 'inline-block';
+    loadFromGas();
+  }
+}
+
+function openGasModal() {
+  document.getElementById('gas-url-input').value = gasUrl;
+  document.getElementById('gas-test-result').textContent = '';
+  document.getElementById('modal-gas').classList.add('open');
+}
+
+function saveGasUrl() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  if (!url) { alert('URLを入力してください'); return; }
+  gasUrl = url;
+  localStorage.setItem('pet_gas_url', url);
+  document.getElementById('sync-status-btn').textContent = '✓ 連携中';
+  document.getElementById('sync-btn').style.display = 'inline-block';
+  closeModal('modal-gas');
+  loadFromGas();
+}
+
+// ===== JSONP通信ヘルパー（file://対応）=====
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('タイムアウト'));
+    }, 15000);
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+    script.onerror = () => { cleanup(); reject(new Error('スクリプト読み込みエラー')); };
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    document.head.appendChild(script);
+  });
+}
+
+async function testGasConnection() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  const res = document.getElementById('gas-test-result');
+  if (!url) { res.textContent = '⚠ URLを入力してください'; res.style.color='var(--red)'; return; }
+  res.textContent = '接続中...'; res.style.color = 'var(--text3)';
+  try {
+    const d = await jsonpRequest(url + '?action=getAll');
+    if (d.projects !== undefined) {
+      res.textContent = `✓ 接続成功！案件${d.projects.length}件を確認しました`;
+      res.style.color = 'var(--accent)';
+    } else {
+      res.textContent = '⚠ データ取得失敗: ' + (d.error||'不明なエラー');
+      res.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    res.textContent = '⚠ 接続失敗: ' + e.message;
+    res.style.color = 'var(--red)';
+  }
+}
+
+async function loadFromGas() {
+  if (!gasUrl) return;
+  showSyncIndicator('読み込み中...');
+  try {
+    const d = await jsonpRequest(gasUrl + '?action=getAll');
+    if (d.projects) {
+      projects = d.projects;
+      nextProjId = Math.max(...projects.map(p=>p.id), 3) + 1;
+      const allInfs = projects.flatMap(p=>p.influencers||[]);
+      nextInfId = allInfs.length > 0 ? Math.max(...allInfs.map(i=>i.id), 400) + 1 : 400;
+      renderHome();
+      hideSyncIndicator('✓ 同期済み');
+      if (currentProjectId) {
+        const p = projects.find(x=>x.id===currentProjectId);
+        if (p) renderDetail(p);
+      }
+    } else {
+      hideSyncIndicator('⚠ 読み込み失敗: ' + (d.error||''));
+    }
+  } catch(e) {
+    hideSyncIndicator('⚠ 接続エラー: ' + e.message);
+    console.error('loadFromGas error:', e);
+  }
+}
+
+async function saveToGas() {
+  if (!gasUrl) return;
+  showSyncIndicator('保存中...');
+  try {
+    // プロジェクトを1件ずつ送信してURLの長さ制限を回避
+    for (const p of projects) {
+      const payload = encodeURIComponent(JSON.stringify({ action: 'saveProject', project: p }));
+      await jsonpRequest(gasUrl + '?data=' + payload);
+    }
+    hideSyncIndicator('✓ 保存済み');
+  } catch(e) {
+    // チャンク送信が失敗した場合は全件まとめて試みる
+    try {
+      const payload = encodeURIComponent(JSON.stringify({ action: 'saveAll', projects }));
+      const d = await jsonpRequest(gasUrl + '?data=' + payload);
+      if (d.success) {
+        hideSyncIndicator('✓ 保存済み');
+      } else {
+        hideSyncIndicator('⚠ 保存失敗: ' + (d.error||''));
+      }
+    } catch(e2) {
+      hideSyncIndicator('⚠ 保存失敗: ' + e2.message);
+      console.error('saveToGas error:', e2);
+    }
+  }
+}
+
+async function syncNow() {
+  await loadFromGas();
+  if (currentProjectId) {
+    const p = projects.find(x=>x.id===currentProjectId);
+    if (p) renderDetail(p);
+  }
+}
+
+function showSyncIndicator(msg) {
+  const btn = document.getElementById('sync-btn');
+  if (btn) { btn.textContent = msg; btn.style.opacity = '0.7'; }
+}
+function hideSyncIndicator(msg) {
+  const btn = document.getElementById('sync-btn');
+  if (btn) {
+    btn.textContent = msg; btn.style.opacity = '1';
+    setTimeout(()=>{ btn.textContent = '🔄 同期'; }, 2500);
+  }
+}
+
+// 変更時に自動保存（GAS連携中のみ）
+const _origUpdateMemo = updateMemo;
+function updateMemo(projId, infId, val) {
+  _origUpdateMemo(projId, infId, val);
+  saveToGas();
+}
+
+renderHome();
+initGas();
+</script>
+</body>
+</html>
