@@ -908,7 +908,10 @@ function updateStatus(projId, infId, key, val) {
   }
   renderProgressOnly(p);
   renderHome();
-  saveToGas();
+  // 差分保存
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'updateStatus', projId, infId, key, value: val })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗: ' + (d.error||'')));
 }
 
 function updateSchedule(projId, key, val) {
@@ -917,7 +920,9 @@ function updateSchedule(projId, key, val) {
   p.schedule[key] = val;
   renderDetail(p);
   renderHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'updateSchedule', projId, key, value: val })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗: ' + (d.error||'')));
 }
 
 function renderProgressOnly(p) {
@@ -1006,6 +1011,9 @@ function updateMemo(projId, infId, val) {
   const inf = p.influencers.find(x=>x.id===infId);
   if (!inf) return;
   inf.memo = val;
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'updateMemo', projId, infId, value: val })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗: ' + (d.error||'')));
 }
 
 
@@ -1037,7 +1045,9 @@ function toggleProjectComplete() {
   renderDetail(p);
   renderHome();
   goHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'completeProject', projId: p.id, completed: p.completed, completedAt: p.completedAt })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗'));
 }
 
 // ===== ADD PROJECT =====
@@ -1048,11 +1058,14 @@ function submitAddProject() {
   const type = document.getElementById('f-proj-type').value;
   const schedule = {};
   (SCHEDULE_DEF[type]||[]).forEach(s=>{ schedule[s.key]=''; });
-  projects.push({ id:nextProjId++, type, name, schedule, influencers:[] });
+  const newProj = { id:nextProjId++, type, name, schedule, influencers:[] };
+  projects.push(newProj);
   closeModal('modal-add-project');
   document.getElementById('f-proj-name').value = '';
   renderHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'addProject', project: newProj })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗'));
 }
 
 // ===== ADD INFLUENCER =====
@@ -1071,7 +1084,7 @@ function submitAddInf() {
   flow.forEach(f=>{ status[f.key]=f.options[0]; });
   const petTypeEl = document.querySelector('input[name="f-pet-type"]:checked');
   const petType = petTypeEl ? petTypeEl.value : 'other';
-  p.influencers.push({
+  const newInf = {
     id:nextInfId++, name,
     account: document.getElementById('f-inf-account').value.trim()||'—',
     followers: document.getElementById('f-inf-followers').value.trim()||'—',
@@ -1080,13 +1093,16 @@ function submitAddInf() {
     url: document.getElementById('f-inf-url').value.trim()||'#',
     platforms: platforms.length>0?platforms:['instagram'],
     status,
-  });
+  };
+  p.influencers.push(newInf);
   closeModal('modal-add-inf');
   ['f-inf-name','f-inf-account','f-inf-followers','f-inf-pet','f-inf-url'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['f-pl-ig','f-pl-tt','f-pl-yt'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
   renderDetail(p);
   renderHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'addInfluencer', projId: p.id, influencer: newInf })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗'));
 }
 
 function closeModal(id) {
@@ -1330,10 +1346,9 @@ function showExcelError(msg) {
 function doImport() {
   const p = projects.find(x=>x.id===currentProjectId);
   if (!p || !pendingImportRows.length) return;
-  // ID が 500未満（サンプルデータ）を削除、手動追加・前回インポート分は残す
-  // ただし確認ダイアログで全削除も選べる
   const sampleInfs = p.influencers.filter(inf => inf.id < 500 || inf.isSample);
   const realInfs   = p.influencers.filter(inf => inf.id >= 500 && !inf.isSample);
+  const toDelete = [];
   if (realInfs.length > 0) {
     const choice = confirm(
       `すでに${realInfs.length}名のインフルエンサーがいます。\n\n` +
@@ -1341,26 +1356,35 @@ function doImport() {
       `キャンセル → 既存に追加する`
     );
     if (choice) {
+      p.influencers.forEach(inf => toDelete.push(inf.id));
       p.influencers = [];
     } else {
-      // サンプルだけ削除して既存は残す
+      sampleInfs.forEach(inf => toDelete.push(inf.id));
       p.influencers = realInfs;
     }
   } else {
-    // サンプルのみの場合は全削除
+    sampleInfs.forEach(inf => toDelete.push(inf.id));
     p.influencers = [];
   }
   const flow = getFlow(p.type);
+  const newInfs = [];
   pendingImportRows.forEach(r => {
     const status = {};
     flow.forEach(f=>{ status[f.key] = f.options[0]; });
     Object.assign(status, r.status);
-    p.influencers.push({ id:nextInfId++, name:r.name, account:r.account, url:r.url, followers:r.followers, petName:r.petName, petType:r.petType||'other', platforms:r.platforms, status, memo:'' });
+    const newInf = { id:nextInfId++, name:r.name, account:r.account, url:r.url, followers:r.followers, petName:r.petName, petType:r.petType||'other', platforms:r.platforms, status, memo:'' };
+    p.influencers.push(newInf);
+    newInfs.push(newInf);
   });
   closeModal('modal-excel');
   renderDetail(p);
   renderHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  // 削除→追加の順で実行
+  Promise.all(toDelete.map(infId => gasCall({ action: 'deleteInfluencer', projId: p.id, infId })))
+    .then(() => Promise.all(newInfs.map(inf => gasCall({ action: 'addInfluencer', projId: p.id, influencer: inf }))))
+    .then(() => hideSyncIndicator('✓ 保存済み'))
+    .catch(() => hideSyncIndicator('⚠ 保存失敗'));
 }
 
 function deleteInf(projId, infId) {
@@ -1370,17 +1394,22 @@ function deleteInf(projId, infId) {
   p.influencers = p.influencers.filter(x=>x.id!==infId);
   renderDetail(p);
   renderHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  gasCall({ action: 'deleteInfluencer', projId, infId })
+    .then(d => d.success ? hideSyncIndicator('✓ 保存済み') : hideSyncIndicator('⚠ 保存失敗'));
 }
 
 function clearNotAssigned(projId) {
   if (!confirm('アサインなしの全員を削除しますか？')) return;
   const p = projects.find(x=>x.id===projId);
   if (!p) return;
+  const toDelete = p.influencers.filter(inf=>inf.status.offer==='アサインなし').map(inf=>inf.id);
   p.influencers = p.influencers.filter(inf=>inf.status.offer!=='アサインなし');
   renderDetail(p);
   renderHome();
-  saveToGas();
+  showSyncIndicator('保存中...');
+  Promise.all(toDelete.map(infId => gasCall({ action: 'deleteInfluencer', projId, infId })))
+    .then(() => hideSyncIndicator('✓ 保存済み'));
 }
 
 function downloadTemplate(type) {
@@ -1490,30 +1519,30 @@ async function loadFromGas() {
   }
 }
 
+async function gasCall(data) {
+  if (!gasUrl) return { success: true };
+  const payload = encodeURIComponent(JSON.stringify(data));
+  try {
+    const d = await jsonpRequest(gasUrl + '?data=' + payload);
+    return d;
+  } catch(e) {
+    console.error('gasCall error:', e, data);
+    return { error: e.message };
+  }
+}
+
 async function saveToGas() {
+  // 差分保存方式ではsaveToGasは全件保存のフォールバックとしてのみ使用
   if (!gasUrl) return;
   showSyncIndicator('保存中...');
   try {
-    // プロジェクトを1件ずつ送信してURLの長さ制限を回避
-    for (const p of projects) {
-      const payload = encodeURIComponent(JSON.stringify({ action: 'saveProject', project: p }));
-      await jsonpRequest(gasUrl + '?data=' + payload);
-    }
-    hideSyncIndicator('✓ 保存済み');
+    const payload = encodeURIComponent(JSON.stringify({ action: 'saveAll', projects }));
+    const d = await jsonpRequest(gasUrl + '?data=' + payload);
+    if (d.success) hideSyncIndicator('✓ 保存済み');
+    else hideSyncIndicator('⚠ 保存失敗: ' + (d.error||''));
   } catch(e) {
-    // チャンク送信が失敗した場合は全件まとめて試みる
-    try {
-      const payload = encodeURIComponent(JSON.stringify({ action: 'saveAll', projects }));
-      const d = await jsonpRequest(gasUrl + '?data=' + payload);
-      if (d.success) {
-        hideSyncIndicator('✓ 保存済み');
-      } else {
-        hideSyncIndicator('⚠ 保存失敗: ' + (d.error||''));
-      }
-    } catch(e2) {
-      hideSyncIndicator('⚠ 保存失敗: ' + e2.message);
-      console.error('saveToGas error:', e2);
-    }
+    hideSyncIndicator('⚠ 保存失敗');
+    console.error('saveToGas error:', e);
   }
 }
 
