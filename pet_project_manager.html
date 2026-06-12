@@ -720,7 +720,7 @@ function renderDetail(p) {
     const keyLabel = p.type==='pr' ? '初稿' : p.type==='shoot' ? '撮影' : '提供';
     const summaryPills = `
       <span class="pill ${pillClass(inf.status.offer)}">${inf.status.offer}</span>
-      <span class="pill ${pillClass(keyStatus)}">${keyLabel}: ${keyStatus}</span>`;
+      <span class="pill ${pillClass(keyStatus)}">${keyStatus}</span>`;
     const commonRows = COMMON_FLOW.map(f => flowRow(inf, p.id, f)).join('');
     const typeFlow = p.type==='pr'?PR_FLOW:p.type==='shoot'?SHOOT_FLOW:VIDEO_FLOW;
     const typeRows = typeFlow.map(f => flowRow(inf, p.id, f)).join('');
@@ -904,7 +904,7 @@ function updateStatus(projId, infId, key, val) {
     const keyLabel  = p.type==='pr' ? '初稿' : p.type==='shoot' ? '撮影' : '提供';
     pillRow.innerHTML = `
       <span class="pill ${pillClass(inf.status.offer)}">${inf.status.offer}</span>
-      <span class="pill ${pillClass(keyStatus)}">${keyLabel}: ${keyStatus}</span>`;
+      <span class="pill ${pillClass(keyStatus)}">${keyStatus}</span>`;
   }
   renderProgressOnly(p);
   renderHome();
